@@ -21,6 +21,7 @@ package org.nuxeo.ecm.platform.oauth2.enums;
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.nuxeo.ecm.platform.oauth2.Constants.TOKEN_SERVICE;
+import static org.nuxeo.ecm.platform.oauth2.tokens.NuxeoOAuth2Token.KEY_SERVICE_NAME;
 
 import java.util.Arrays;
 
@@ -42,14 +43,14 @@ public enum NuxeoOAuth2TokenType {
     AS_PROVIDER("asProvider") {
         @Override
         public Predicate getPredicate() {
-            return Predicates.eq("serviceName", TOKEN_SERVICE);
+            return Predicates.eq(KEY_SERVICE_NAME, TOKEN_SERVICE);
         }
     },
 
     AS_CLIENT("asClient") {
         @Override
         public Predicate getPredicate() {
-            return Predicates.noteq("serviceName", TOKEN_SERVICE);
+            return Predicates.noteq(KEY_SERVICE_NAME, TOKEN_SERVICE);
         }
     };
 

@@ -24,7 +24,7 @@ import java.util.List;
 import org.nuxeo.ecm.platform.oauth2.enums.NuxeoOAuth2TokenType;
 
 /**
- * The OAuth2 token service that manages tokens. An OAuth2 token can be:
+ * Manages oAuth2 tokens. An token can be:
  * <ul>
  * <li>Provided by Nuxeo, it's the OAuth2 server provider.</li>
  * <li>Consumed by Nuxeo, it's a client of another server provider.</li>
@@ -36,34 +36,33 @@ public interface OAuth2TokenService {
     String TOKEN_DIR = "oauth2Tokens";
 
     /**
-     * Get the OAuth2 tokens.
+     * Get the oAuth2 tokens.
      *
      * @return the oAuth2 tokens
      */
     List<NuxeoOAuth2Token> getTokens();
 
     /**
-     * Get the OAuth2 tokens.
+     * Get the oAuth2 tokens.
      *
      * @param nxuser the nuxeo user
-     * @return the oAuth2 tokens
+     * @return the oAuth2 tokens that match the nuxeo user
      */
     List<NuxeoOAuth2Token> getTokens(String nxuser);
 
     /**
-     * Get the OAuth2 tokens.
-     *
+     * Get the oAuth2 tokens by type.
+     ** 
      * @param type the token type {@link NuxeoOAuth2TokenType}
-     * @return the oAuth2 tokens
+     * @return the oAuth2 tokens that match the type
      */
     List<NuxeoOAuth2Token> getTokens(NuxeoOAuth2TokenType type);
 
     /**
-     * Get the OAuth2 tokens.
+     * Search oAuth2 tokens.
      *
-     * @param nxuser the nuxeo user
-     * @param type the token type {@link NuxeoOAuth2TokenType}
-     * @return the oAuth2 tokens
+     * @param query the query to match
+     * @return the oAuth2 tokens that match the query
      */
-    List<NuxeoOAuth2Token> getTokens(String nxuser, NuxeoOAuth2TokenType type);
+    List<NuxeoOAuth2Token> search(String query);
 }

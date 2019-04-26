@@ -26,8 +26,10 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.json.JSONException;
@@ -49,6 +51,7 @@ import org.skyscreamer.jsonassert.JSONCompareMode;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /**
  * @since 8.4
@@ -133,6 +136,16 @@ public class OAuth2ObjectTest extends BaseTest {
      */
     protected static final String TOKEN_PATH_NUXEO_AS_CLIENT = String.format("oauth2/token/%s",
             NuxeoOAuth2TokenType.AS_CLIENT.getValue());
+
+    /**
+     * @since 11.1
+     */
+    protected static final String SEARCH_TOKENS_PATH = "oauth2/token/search";
+
+    /**
+     * @since 11.1
+     */
+    protected static final String SEARCH_TOKENS_QUERY_PARAM = "q";
 
     protected static final String AUTHORIZATION_SERVER_URL = "https://test.oauth2.provider/authorization";
 
@@ -397,8 +410,223 @@ public class OAuth2ObjectTest extends BaseTest {
                 "   ]\n" + //
                 "}";
 
-        makeOperationAndVerify(TEST_OAUTH2_USER, TOKEN_PATH_NUXEO_AS_PROVIDER, RequestType.GET, null,
-                Response.Status.OK, mapper.readTree(data));
+        makeOperationAndVerify(TEST_OAUTH2_USER, TOKEN_PATH_NUXEO_AS_PROVIDER, RequestType.GET, Response.Status.OK,
+                mapper.readTree(data));
+    }
+
+    /**
+     * @since 11.1
+     */
+    @Test
+    public void iCanSearchTokensByNuxeoLogin() throws IOException {
+        String data = "{\n" + //
+                "   \"entity-type\": \"nuxeoOAuth2Tokens\",\n" + //
+                "   \"entries\": [\n" + //
+                "      {\n" + //
+                "         \"entity-type\": \"nuxeoOAuth2Token\",\n" + //
+                "         \"serviceName\": \"test-oauth2-provider\",\n" + //
+                "         \"nuxeoLogin\": \"user1\",\n" + //
+                "         \"serviceLogin\": \"my1@mail \",\n" + //
+                "         \"clientId\": null,\n" + //
+                "         \"isShared\": false,\n" + //
+                "         \"sharedWith\": [\"null\"],\n" + //
+                "         \"creationDate\": \"2017-05-09 11:11:11\"\n" + //
+                "      },\n" + //
+                "      {\n" + //
+                "         \"entity-type\": \"nuxeoOAuth2Token\",\n" + //
+                "         \"serviceName\": \"org.nuxeo.server.token.store\",\n" + //
+                "         \"nuxeoLogin\": \"user1\",\n" + //
+                "         \"serviceLogin\": \"my1@mail \",\n" + //
+                "         \"clientId\": \"my-client\",\n" + //
+                "         \"isShared\": false,\n" + //
+                "         \"sharedWith\": [\"null\"],\n" + //
+                "         \"creationDate\": \"2017-05-20 11:11:11\"\n" + //
+                "      }\n" + //
+                "   ]\n" + //
+                "}";
+
+        MultivaluedMap<String, String> params = new MultivaluedMapImpl();
+        params.put(SEARCH_TOKENS_QUERY_PARAM, Collections.singletonList("er1"));
+        makeOperationAndVerify(TEST_OAUTH2_USER, SEARCH_TOKENS_PATH, RequestType.GET, params, Response.Status.OK,
+                mapper.readTree(data));
+    }
+
+    /**
+     * @since 11.1
+     */
+    @Test
+    public void iCanSearchTokensByFullNuxeoLogin() throws IOException {
+        String data = "{\n" + //
+                "   \"entity-type\": \"nuxeoOAuth2Tokens\",\n" + //
+                "   \"entries\": [\n" + //
+                "      {\n" + //
+                "         \"entity-type\": \"nuxeoOAuth2Token\",\n" + //
+                "         \"serviceName\": \"test-oauth2-provider\",\n" + //
+                "         \"nuxeoLogin\": \"user1\",\n" + //
+                "         \"serviceLogin\": \"my1@mail \",\n" + //
+                "         \"clientId\": null,\n" + //
+                "         \"isShared\": false,\n" + //
+                "         \"sharedWith\": [\"null\"],\n" + //
+                "         \"creationDate\": \"2017-05-09 11:11:11\"\n" + //
+                "      },\n" + //
+                "      {\n" + //
+                "         \"entity-type\": \"nuxeoOAuth2Token\",\n" + //
+                "         \"serviceName\": \"org.nuxeo.server.token.store\",\n" + //
+                "         \"nuxeoLogin\": \"user1\",\n" + //
+                "         \"serviceLogin\": \"my1@mail \",\n" + //
+                "         \"clientId\": \"my-client\",\n" + //
+                "         \"isShared\": false,\n" + //
+                "         \"sharedWith\": [\"null\"],\n" + //
+                "         \"creationDate\": \"2017-05-20 11:11:11\"\n" + //
+                "      }\n" + //
+                "   ]\n" + //
+                "}";
+
+        MultivaluedMap<String, String> params = new MultivaluedMapImpl();
+        params.put(SEARCH_TOKENS_QUERY_PARAM, Collections.singletonList("user1"));
+        makeOperationAndVerify(TEST_OAUTH2_USER, SEARCH_TOKENS_PATH, RequestType.GET, params, Response.Status.OK,
+                mapper.readTree(data));
+    }
+
+    /**
+     * @since 11.1
+     */
+    @Test
+    public void iCanSearchTokensByServiceName() throws IOException {
+        String data = "{\n" + //
+                "   \"entity-type\": \"nuxeoOAuth2Tokens\",\n" + //
+                "   \"entries\": [\n" + //
+                "      {\n" + //
+                "         \"entity-type\": \"nuxeoOAuth2Token\",\n" + //
+                "         \"serviceName\": \"org.nuxeo.server.token.store\",\n" + //
+                "         \"nuxeoLogin\": \"user2\",\n" + //
+                "         \"serviceLogin\": \"my2@mail \",\n" + //
+                "         \"clientId\": \"my-client\",\n" + //
+                "         \"isShared\": false,\n" + //
+                "         \"sharedWith\": [\"null\"],\n" + //
+                "         \"creationDate\": \"2017-05-21 11:11:11\"\n" + //
+                "      },\n" + //
+                "      {\n" + //
+                "         \"entity-type\": \"nuxeoOAuth2Token\",\n" + //
+                "         \"serviceName\": \"org.nuxeo.server.token.store\",\n" + //
+                "         \"nuxeoLogin\": \"user1\",\n" + //
+                "         \"serviceLogin\": \"my1@mail \",\n" + //
+                "         \"clientId\": \"my-client\",\n" + //
+                "         \"isShared\": false,\n" + //
+                "         \"sharedWith\": [\"null\"],\n" + //
+                "         \"creationDate\": \"2017-05-20 11:11:11\"\n" + //
+                "      }\n" + //
+                "   ]\n" + //
+                "}";
+
+        MultivaluedMap<String, String> params = new MultivaluedMapImpl();
+        params.put(SEARCH_TOKENS_QUERY_PARAM, Collections.singletonList("token.store"));
+        makeOperationAndVerify(TEST_OAUTH2_USER, SEARCH_TOKENS_PATH, RequestType.GET, params, Response.Status.OK,
+                mapper.readTree(data));
+    }
+
+    /**
+     * @since 11.1
+     */
+    @Test
+    public void iCanSearchTokensByFullServiceName() throws IOException {
+        String data = "{\n" + //
+                "   \"entity-type\": \"nuxeoOAuth2Tokens\",\n" + //
+                "   \"entries\": [\n" + //
+                "      {\n" + //
+                "         \"entity-type\": \"nuxeoOAuth2Token\",\n" + //
+                "         \"serviceName\": \"org.nuxeo.server.token.store\",\n" + //
+                "         \"nuxeoLogin\": \"user2\",\n" + //
+                "         \"serviceLogin\": \"my2@mail \",\n" + //
+                "         \"clientId\": \"my-client\",\n" + //
+                "         \"isShared\": false,\n" + //
+                "         \"sharedWith\": [\"null\"],\n" + //
+                "         \"creationDate\": \"2017-05-21 11:11:11\"\n" + //
+                "      },\n" + //
+                "      {\n" + //
+                "         \"entity-type\": \"nuxeoOAuth2Token\",\n" + //
+                "         \"serviceName\": \"org.nuxeo.server.token.store\",\n" + //
+                "         \"nuxeoLogin\": \"user1\",\n" + //
+                "         \"serviceLogin\": \"my1@mail \",\n" + //
+                "         \"clientId\": \"my-client\",\n" + //
+                "         \"isShared\": false,\n" + //
+                "         \"sharedWith\": [\"null\"],\n" + //
+                "         \"creationDate\": \"2017-05-20 11:11:11\"\n" + //
+                "      }\n" + //
+                "   ]\n" + //
+                "}";
+
+        MultivaluedMap<String, String> params = new MultivaluedMapImpl();
+        params.put(SEARCH_TOKENS_QUERY_PARAM, Collections.singletonList("org.nuxeo.server.token.store"));
+        makeOperationAndVerify(TEST_OAUTH2_USER, SEARCH_TOKENS_PATH, RequestType.GET, params, Response.Status.OK,
+                mapper.readTree(data));
+    }
+
+    /**
+     * @since 11.1
+     */
+    @Test
+    public void iCanSearchTokensByServiceNameOrNuxeoLogin() throws IOException {
+        String data = "{\n" + //
+                "   \"entity-type\": \"nuxeoOAuth2Tokens\",\n" + //
+                "   \"entries\": [\n" + //
+                "      {\n" + //
+                "         \"entity-type\": \"nuxeoOAuth2Token\",\n" + //
+                "         \"serviceName\": \"test-oauth2-provider\",\n" + //
+                "         \"nuxeoLogin\": \"Administrator\",\n" + //
+                "         \"clientId\": null,\n" + //
+                "         \"serviceLogin\": \"Administrator@email.com\",\n" + //
+                "         \"isShared\": false,\n" + //
+                "         \"sharedWith\": [\"null\"],\n" + //
+                "         \"creationDate\": \"2017-05-09 11:11:11\"\n" + //
+                "      },\n" + //
+                "      {\n" + //
+                "         \"entity-type\": \"nuxeoOAuth2Token\",\n" + //
+                "         \"serviceName\": \"test-oauth2-provider\",\n" + //
+                "         \"nuxeoLogin\": \"user1\",\n" + //
+                "         \"serviceLogin\": \"my1@mail \",\n" + //
+                "         \"clientId\": null,\n" + //
+                "         \"isShared\": false,\n" + //
+                "         \"sharedWith\": [\"null\"],\n" + //
+                "         \"creationDate\": \"2017-05-09 11:11:11\"\n" + //
+                "      },\n" + //
+                "      {\n" + //
+                "         \"entity-type\": \"nuxeoOAuth2Token\",\n" + //
+                "         \"serviceName\": \"test-oauth2-provider\",\n" + //
+                "         \"nuxeoLogin\": \"user2\",\n" + //
+                "         \"serviceLogin\": \"my2@mail \",\n" + //
+                "         \"isShared\": false,\n" + //
+                "         \"clientId\": null,\n" + //
+                "         \"sharedWith\": [\"null\"],\n" + //
+                "         \"creationDate\": \"2017-05-08 11:11:11\"\n" + //
+                "      },\n" + //
+                "      {\n" + //
+                "         \"entity-type\": \"nuxeoOAuth2Token\",\n" + //
+                "         \"serviceName\": \"org.nuxeo.server.token.store\",\n" + //
+                "         \"nuxeoLogin\": \"user2\",\n" + //
+                "         \"serviceLogin\": \"my2@mail \",\n" + //
+                "         \"clientId\": \"my-client\",\n" + //
+                "         \"isShared\": false,\n" + //
+                "         \"sharedWith\": [\"null\"],\n" + //
+                "         \"creationDate\": \"2017-05-21 11:11:11\"\n" + //
+                "      },\n" + //
+                "      {\n" + //
+                "         \"entity-type\": \"nuxeoOAuth2Token\",\n" + //
+                "         \"serviceName\": \"org.nuxeo.server.token.store\",\n" + //
+                "         \"nuxeoLogin\": \"user1\",\n" + //
+                "         \"serviceLogin\": \"my1@mail \",\n" + //
+                "         \"clientId\": \"my-client\",\n" + //
+                "         \"isShared\": false,\n" + //
+                "         \"sharedWith\": [\"null\"],\n" + //
+                "         \"creationDate\": \"2017-05-20 11:11:11\"\n" + //
+                "      }\n" + //
+                "   ]\n" + //
+                "}";
+
+        MultivaluedMap<String, String> params = new MultivaluedMapImpl();
+        params.put(SEARCH_TOKENS_QUERY_PARAM, Collections.singletonList("u"));
+        makeOperationAndVerify(TEST_OAUTH2_USER, SEARCH_TOKENS_PATH, RequestType.GET, params, Response.Status.OK,
+                mapper.readTree(data));
     }
 
     /**
@@ -450,7 +678,7 @@ public class OAuth2ObjectTest extends BaseTest {
                 "   ]\n" + //
                 "}";
 
-        makeOperationAndVerify(TEST_OAUTH2_USER, TOKEN_PATH_NUXEO_AS_CLIENT, RequestType.GET, null, Response.Status.OK,
+        makeOperationAndVerify(TEST_OAUTH2_USER, TOKEN_PATH_NUXEO_AS_CLIENT, RequestType.GET, Response.Status.OK,
                 mapper.readTree(data));
     }
 
@@ -469,8 +697,8 @@ public class OAuth2ObjectTest extends BaseTest {
     public void shouldFailWhenRetrieveTokensWithoutValidType() {
         JsonNode expectedBody = createResponseError(String.format("Undefined oAuth2 type for value 'anyType'"),
                 Response.Status.NOT_FOUND);
-        makeOperationAndVerify(TEST_OAUTH2_USER, "oauth2/token/anyType", RequestType.GET, null,
-                Response.Status.NOT_FOUND, expectedBody);
+        makeOperationAndVerify(TEST_OAUTH2_USER, "oauth2/token/anyType", RequestType.GET, Response.Status.NOT_FOUND,
+                expectedBody);
     }
 
     // test oauth2/token/provider
@@ -848,8 +1076,8 @@ public class OAuth2ObjectTest extends BaseTest {
         String clientId = "fake";
         JsonNode jsonNode = createResponseError(String.format("Invalid client: %s", clientId),
                 Response.Status.NOT_FOUND);
-        makeOperationAndVerify(TEST_OAUTH2_USER, getClientPath(clientId), RequestType.GET, null,
-                Response.Status.NOT_FOUND, jsonNode);
+        makeOperationAndVerify(TEST_OAUTH2_USER, getClientPath(clientId), RequestType.GET, Response.Status.NOT_FOUND,
+                jsonNode);
     }
 
     /**
@@ -873,7 +1101,7 @@ public class OAuth2ObjectTest extends BaseTest {
      */
     @Test
     public void cannotDeleteClientByUnauthorizedUsers() {
-        makeUnauthorizedOperationAndVerify(getClientPath("any-client"), RequestType.DELETE, null);
+        makeUnauthorizedOperationAndVerify(getClientPath(TEST_CLIENT_3), RequestType.DELETE, null);
     }
 
     /**
@@ -1022,7 +1250,7 @@ public class OAuth2ObjectTest extends BaseTest {
                 "}";
 
         makeOperationAndVerify(TEST_OAUTH2_USER, getClientPath(clientId), RequestType.PUT,
-                String.format(data, clientId), Response.Status.NOT_FOUND, null);
+                String.format(data, clientId), null, Response.Status.NOT_FOUND, null);
     }
 
     /**
@@ -1031,8 +1259,8 @@ public class OAuth2ObjectTest extends BaseTest {
     @Test
     public void iCannotDeleteUnExistingClient() {
         String clientId = "unExisting-client-id";
-        makeOperationAndVerify(TEST_OAUTH2_USER, getClientPath(clientId), RequestType.DELETE, null,
-                Response.Status.NOT_FOUND, null);
+        makeOperationAndVerify(TEST_OAUTH2_USER, getClientPath(clientId), RequestType.DELETE, Response.Status.NOT_FOUND,
+                null);
     }
 
     /**
@@ -1134,16 +1362,15 @@ public class OAuth2ObjectTest extends BaseTest {
     @Test
     public void iCanDeleteClient() {
         String clientPath = getClientPath(TEST_CLIENT_3);
-        makeOperationAndVerify(TEST_OAUTH2_USER, clientPath, RequestType.DELETE, null, Response.Status.NO_CONTENT,
-                null);
+        makeOperationAndVerify(TEST_OAUTH2_USER, clientPath, RequestType.DELETE, Response.Status.NO_CONTENT, null);
 
         // Try to get the deleted resource
-        makeOperationAndVerify(TEST_OAUTH2_USER, clientPath, RequestType.GET, null, Response.Status.NOT_FOUND, null);
+        makeOperationAndVerify(TEST_OAUTH2_USER, clientPath, RequestType.GET, Response.Status.NOT_FOUND, null);
     }
 
     /**
      * @deprecated since 11.1. Use
-     *             {@link #makeOperationAndVerify(String, String, RequestType, String, Response.Status, JsonNode)}
+     *             {@link #makeOperationAndVerify(String, String, RequestType, String, MultivaluedMap, Response.Status, JsonNode)}
      *             instead.
      */
     @Deprecated
@@ -1171,9 +1398,9 @@ public class OAuth2ObjectTest extends BaseTest {
      * @param path the path to the resource
      * @param method the request type {@link RequestType}
      * @param dataAsJson the json data to send
+     * @since 11.1
      */
     protected void makeUnauthorizedOperationAndVerify(String path, RequestType method, String dataAsJson) {
-        makeOperationAndVerify("anyUser", path, method, dataAsJson, Response.Status.UNAUTHORIZED, null);
         makeOperationAndVerify("user1", path, method, dataAsJson, Response.Status.FORBIDDEN, null);
     }
 
@@ -1188,14 +1415,17 @@ public class OAuth2ObjectTest extends BaseTest {
      * @param path the path to the resource
      * @param method the method type {@link RequestType}
      * @param dataAsJson the json data to send
+     * @param queryParams the query params
      * @param expectedStatus the expected status
      * @param expectedBody the expected response, can be null (case of delete) or if we want to check the status only
      * @throws NuxeoException
+     * @since 11.1
      */
     protected void makeOperationAndVerify(String user, String path, RequestType method, String dataAsJson,
-            Response.Status expectedStatus, JsonNode expectedBody) {
+            MultivaluedMap<String, String> queryParams, Response.Status expectedStatus, JsonNode expectedBody) {
         service = getServiceFor(user, user);
-        try (CloseableClientResponse response = getResponse(method, path, dataAsJson)) {
+        try (CloseableClientResponse response = getResponse(method, path, dataAsJson, queryParams, null,
+                Collections.emptyMap())) {
             assertEquals(expectedStatus, Response.Status.fromStatusCode(response.getStatus()));
 
             if (expectedBody != null) {
@@ -1210,11 +1440,12 @@ public class OAuth2ObjectTest extends BaseTest {
     }
 
     /**
-     * Create {@code JsonNode} that wrap an error response
+     * Create {@code JsonNode} that wrap an error response.
      *
      * @param message the message
      * @param status the status
      * @return the response error
+     * @since 11.1
      */
     protected JsonNode createResponseError(String message, Response.Status status) {
         ObjectNode response = mapper.createObjectNode();
@@ -1223,6 +1454,39 @@ public class OAuth2ObjectTest extends BaseTest {
         response.put("message", message);
 
         return response;
+    }
+
+    /**
+     * Make the CRUD operation and check the response.
+     *
+     * @since 11.1
+     * @see #makeOperationAndVerify(String, String, RequestType, String, MultivaluedMap, Response.Status, JsonNode)
+     */
+    protected void makeOperationAndVerify(String user, String path, RequestType method, Response.Status expectedStatus,
+            JsonNode expectedBody) {
+        makeOperationAndVerify(user, path, method, null, null, expectedStatus, expectedBody);
+    }
+
+    /**
+     * Make the CRUD operation and check the response.
+     *
+     * @since 11.1
+     * @see #makeOperationAndVerify(String, String, RequestType, String, MultivaluedMap, Response.Status, JsonNode)
+     */
+    protected void makeOperationAndVerify(String user, String path, RequestType method, String dataAsJson,
+            Response.Status expectedStatus, JsonNode expectedBody) {
+        makeOperationAndVerify(user, path, method, dataAsJson, null, expectedStatus, expectedBody);
+    }
+
+    /**
+     * Make the CRUD operation and check the response.
+     *
+     * @since 11.1
+     * @see #makeOperationAndVerify(String, String, RequestType, String, MultivaluedMap, Response.Status, JsonNode)
+     */
+    protected void makeOperationAndVerify(String user, String path, RequestType method,
+            MultivaluedMap<String, String> queryParams, Response.Status expectedStatus, JsonNode expectedBody) {
+        makeOperationAndVerify(user, path, method, null, queryParams, expectedStatus, expectedBody);
     }
 
 }

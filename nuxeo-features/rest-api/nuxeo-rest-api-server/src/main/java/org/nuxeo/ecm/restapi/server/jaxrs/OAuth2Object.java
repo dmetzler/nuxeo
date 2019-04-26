@@ -38,6 +38,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -214,6 +215,19 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
     public List<NuxeoOAuth2Token> getTokens(@PathParam("type") String type, @Context HttpServletRequest request) {
         checkPermission(null);
         return Framework.getService(OAuth2TokenService.class).getTokens(NuxeoOAuth2TokenType.fromValueType(type));
+    }
+
+    /**
+     * Retrieves all oAuth2 tokens by query
+     *
+     * @param query the query to match
+     * @since 11.1
+     */
+    @GET
+    @Path("token/search")
+    public List<NuxeoOAuth2Token> searchTokens(@QueryParam("q") String query) {
+        checkPermission(null);
+        return Framework.getService(OAuth2TokenService.class).search(query);
     }
 
     /**
@@ -569,7 +583,7 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
     protected void deleteToken(DocumentModel token) {
         Framework.doPrivileged(() -> {
             DirectoryService ds = Framework.getService(DirectoryService.class);
-            try (Session session = ds.open(TOKEN_DIR)) {
+            try (Session session = ds.open(OAuth2TokenService.TOKEN_DIR)) {
                 session.deleteEntry(token);
             }
         });

@@ -20,11 +20,16 @@
 package org.nuxeo.ecm.platform.oauth2.tokens;
 
 import static java.util.Objects.requireNonNull;
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static org.nuxeo.ecm.platform.oauth2.tokens.NuxeoOAuth2Token.KEY_NUXEO_LOGIN;
+import static org.nuxeo.ecm.platform.oauth2.tokens.NuxeoOAuth2Token.KEY_SERVICE_NAME;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.query.sql.model.Predicates;
 import org.nuxeo.ecm.core.query.sql.model.QueryBuilder;
 import org.nuxeo.ecm.directory.Session;
@@ -34,7 +39,7 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
 
 /**
- * The implementation that manages the tokens in Nuxeo.
+ * The implementation that manages the oauth2 tokens in Nuxeo.
  *
  * @since 11.1
  */
@@ -42,43 +47,48 @@ public class OAuth2TokenServiceImpl extends DefaultComponent implements OAuth2To
 
     @Override
     public List<NuxeoOAuth2Token> getTokens() {
-        return findTokens(null, null);
+        return findTokens(getQueryBuilder(null, null));
     }
 
     @Override
     public List<NuxeoOAuth2Token> getTokens(String nxuser) {
         requireNonNull(nxuser, "nxuser cannot be null");
-
-        return findTokens(nxuser, null);
+        return findTokens(getQueryBuilder(null, nxuser));
     }
 
     @Override
     public List<NuxeoOAuth2Token> getTokens(NuxeoOAuth2TokenType type) {
         requireNonNull(type, "oAuth2TokenType cannot be null");
-
-        return findTokens(null, type);
+        return findTokens(getQueryBuilder(type, null));
     }
 
     @Override
-    public List<NuxeoOAuth2Token> getTokens(String nxuser, NuxeoOAuth2TokenType type) {
-        requireNonNull(nxuser, "nxuser cannot be null");
-        requireNonNull(type, "oAuth2TokenType cannot be null");
-
-        return findTokens(nxuser, type);
+    public List<NuxeoOAuth2Token> search(String query) {
+        return findTokens(getQueryBuilder(query));
     }
 
-    protected List<NuxeoOAuth2Token> findTokens(String nxuser, NuxeoOAuth2TokenType type) {
+    protected List<NuxeoOAuth2Token> findTokens(QueryBuilder queryBuilder) {
         return Framework.doPrivileged(() -> {
             DirectoryService ds = Framework.getService(DirectoryService.class);
             try (Session session = ds.open(TOKEN_DIR)) {
-                QueryBuilder queryBuilder = getQueryBuilder(nxuser, type);
                 List<DocumentModel> documents = session.query(queryBuilder, false);
-                return documents.stream().map(NuxeoOAuth2Token::new).collect(Collectors.toList());
+                return documents.stream().distinct().map(NuxeoOAuth2Token::new).collect(Collectors.toList());
             }
         });
     }
 
-    protected QueryBuilder getQueryBuilder(String nxuser, NuxeoOAuth2TokenType type) {
+    protected QueryBuilder getQueryBuilder(String query) {
+        if (StringUtils.isEmpty(query)) {
+            throw new NuxeoException("query is required", SC_BAD_REQUEST);
+        }
+
+        String match = String.format("%%%s%%", query);
+        return new QueryBuilder().predicate(
+                Predicates.or(Predicates.like(KEY_NUXEO_LOGIN, match), Predicates.like(KEY_SERVICE_NAME, match)));
+
+    }
+
+    protected QueryBuilder getQueryBuilder(NuxeoOAuth2TokenType type, String nxuser) {
         QueryBuilder queryBuilder = new QueryBuilder();
 
         if (nxuser != null) {
@@ -89,5 +99,4 @@ public class OAuth2TokenServiceImpl extends DefaultComponent implements OAuth2To
         }
         return queryBuilder;
     }
-
 }
