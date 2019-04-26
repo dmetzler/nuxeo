@@ -97,6 +97,7 @@ import org.nuxeo.ecm.core.test.StorageConfiguration;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.test.runner.ConditionalIgnoreRule;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -2515,6 +2516,7 @@ public class TestSQLRepositoryQuery {
     }
 
     @Test
+    @ConditionalIgnoreRule.Ignore(condition = ConditionalIgnoreRule.IgnoreWindows.class, cause = "NXP-27289")
     public void testEqualsTimeWithMilliseconds() {
         Date currentDate = setupDocTest();
         String testQuery = String.format(
