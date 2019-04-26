@@ -53,13 +53,13 @@ public class OAuth2TokenServiceImpl extends DefaultComponent implements OAuth2To
     @Override
     public List<NuxeoOAuth2Token> getTokens(String nxuser) {
         requireNonNull(nxuser, "nxuser cannot be null");
-        return findTokens(getQueryBuilder(null, nxuser));
+        return findTokens(getQueryBuilder(nxuser, null));
     }
 
     @Override
     public List<NuxeoOAuth2Token> getTokens(NuxeoOAuth2TokenType type) {
         requireNonNull(type, "oAuth2TokenType cannot be null");
-        return findTokens(getQueryBuilder(type, null));
+        return findTokens(getQueryBuilder(null, type));
     }
 
     @Override
@@ -88,7 +88,7 @@ public class OAuth2TokenServiceImpl extends DefaultComponent implements OAuth2To
 
     }
 
-    protected QueryBuilder getQueryBuilder(NuxeoOAuth2TokenType type, String nxuser) {
+    protected QueryBuilder getQueryBuilder(String nxuser, NuxeoOAuth2TokenType type) {
         QueryBuilder queryBuilder = new QueryBuilder();
 
         if (nxuser != null) {

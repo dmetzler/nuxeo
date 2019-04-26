@@ -202,23 +202,24 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
     }
 
     /**
-     * Retrieves all OAuth2 tokens by oAuth2 token type.
+     * Retrieves all oAuth2 tokens by {@link NuxeoOAuth2TokenType}.
      *
-     * @param type, the value of {@link NuxeoOAuth2TokenType}
+     * @param type, the value of {@code NuxeoOAuth2TokenType}
      * @param request the http request
-     * @return if <code>type</code> is {@link NuxeoOAuth2TokenType#AS_PROVIDER} value, then we retrieve tokens that are provided
-     *         by Nuxeo, otherwise those used by Nuxeo to connect to others applications
+     * @return if <code>type</code> is {@link NuxeoOAuth2TokenType#AS_PROVIDER}, then we retrieve tokens that are
+     *         provided by Nuxeo, otherwise those used by Nuxeo to connect to others applications
      * @since 11.1
      */
     @GET
     @Path("token/{type}")
-    public List<NuxeoOAuth2Token> getTokens(@PathParam("type") String type, @Context HttpServletRequest request) {
+    public List<NuxeoOAuth2Token> getTokens(@PathParam("type") NuxeoOAuth2TokenType type,
+            @Context HttpServletRequest request) {
         checkPermission(null);
-        return Framework.getService(OAuth2TokenService.class).getTokens(NuxeoOAuth2TokenType.fromValueType(type));
+        return Framework.getService(OAuth2TokenService.class).getTokens(type);
     }
 
     /**
-     * Retrieves all oAuth2 tokens by query
+     * Search all oAuth2 tokens that match the query.
      *
      * @param query the query to match
      * @since 11.1
@@ -437,7 +438,6 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
      * Update the oauth2 client.
      *
      * @param clientId the oAuth2 client id to update
-     * @param request the http request
      * @param client the oAuth2Client to update
      * @return the {@link Response}
      * @since 11.1
@@ -446,8 +446,7 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
     @Path("client/{clientId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateClient(@PathParam("clientId") String clientId, @Context HttpServletRequest request,
-            OAuth2Client client) {
+    public Response updateClient(@PathParam("clientId") String clientId, OAuth2Client client) {
         checkPermission(null);
         OAuth2Client oAuth2Client = Framework.getService(OAuth2ClientService.class).update(clientId, client);
         return Response.ok(oAuth2Client).build();
@@ -457,13 +456,12 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
      * Delete the oauth2 client.
      *
      * @param clientId the oAuth2 client id to delete
-     * @param request the http request
      * @return the {@link Response}
      * @since 11.1
      */
     @DELETE
     @Path("client/{clientId}")
-    public Response deleteClient(@PathParam("clientId") String clientId, @Context HttpServletRequest request) {
+    public Response deleteClient(@PathParam("clientId") String clientId) {
         checkPermission(null);
         Framework.getService(OAuth2ClientService.class).delete(clientId);
         return Response.noContent().build();

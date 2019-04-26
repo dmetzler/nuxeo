@@ -26,7 +26,7 @@ import org.nuxeo.ecm.platform.oauth2.enums.NuxeoOAuth2TokenType;
 /**
  * Manages oAuth2 tokens. An token can be:
  * <ul>
- * <li>Provided by Nuxeo, it's the OAuth2 server provider.</li>
+ * <li>Provided by Nuxeo, it's the oAuth2 server provider.</li>
  * <li>Consumed by Nuxeo, it's a client of another server provider.</li>
  * </ul>
  *
@@ -65,4 +65,5 @@ public interface OAuth2TokenService {
      * @return the oAuth2 tokens that match the query
      */
     List<NuxeoOAuth2Token> search(String query);
+
 }

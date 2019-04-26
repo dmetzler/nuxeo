@@ -43,7 +43,7 @@ public interface OAuth2ClientService {
     List<OAuth2Client> getClients();
 
     /**
-     * Register a new OAuth2 Client.
+     * Register a new oAuth2 client.
      *
      * @param oAuth2Client the {@link OAuth2Client} to register
      * @return the newly registered client
@@ -52,7 +52,7 @@ public interface OAuth2ClientService {
     OAuth2Client create(OAuth2Client oAuth2Client);
 
     /**
-     * Update an exiting OAuth2 Client.
+     * Update an exiting oAuth2 client.
      *
      * @param clientId the client id of oAuth2Client to update
      * @param oAuth2Client the new data {@link OAuth2Client}
@@ -62,7 +62,7 @@ public interface OAuth2ClientService {
     OAuth2Client update(String clientId, OAuth2Client oAuth2Client);
 
     /**
-     * Delete an OAuth2 Client.
+     * Delete an oAuth2 client.
      *
      * @param clientId the client id of oAuth2Client to delete
      * @since 11.1

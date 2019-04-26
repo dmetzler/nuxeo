@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -82,71 +81,65 @@ public class OAuth2ClientServiceImpl extends DefaultComponent implements OAuth2C
 
         return execute((session) -> {
             DocumentModel documentModel = OAuth2Client.fromOAuth2Client(oAuth2Client);
-            return OAuth2Client.fromDocumentModel(Framework.doPrivileged(() -> session.createEntry(documentModel)));
+            return OAuth2Client.fromDocumentModel(session.createEntry(documentModel));
         });
     }
 
     @Override
     public OAuth2Client update(String clientId, OAuth2Client oAuth2Client) {
+        DocumentModel doc = getClientModel(clientId);
+        if (doc == null) {
+            throw new NuxeoException(SC_NOT_FOUND);
+        }
+
         return execute((session) -> {
-            Optional<DocumentModel> optional = Optional.ofNullable(getClientModel(clientId));
-            return optional.map((doc) -> {
-                OAuth2Client.updateDocument(doc, oAuth2Client);
-                Framework.doPrivileged(() -> session.updateEntry(doc));
-                return OAuth2Client.fromDocumentModel(doc);
-            }).orElseThrow(() -> new NuxeoException(SC_NOT_FOUND));
+            OAuth2Client.updateDocument(doc, oAuth2Client);
+            session.updateEntry(doc);
+            return OAuth2Client.fromDocumentModel(doc);
         });
     }
 
     @Override
     public void delete(String clientId) {
+        DocumentModel doc = getClientModel(clientId);
+        if (doc == null) {
+            throw new NuxeoException(SC_NOT_FOUND);
+        }
+
         execute((session) -> {
-            Optional<DocumentModel> optional = Optional.ofNullable(getClientModel(clientId));
-            Framework.doPrivileged(() -> {
-                DocumentModel document = optional.orElseThrow(() -> new NuxeoException(SC_NOT_FOUND));
-                session.deleteEntry(document);
-            });
+            session.deleteEntry(doc);
             return null;
         });
     }
 
     protected DocumentModel getClientModel(String clientId) {
-        DirectoryService service = Framework.getService(DirectoryService.class);
-        return Framework.doPrivileged(() -> {
-            try (Session session = service.open(OAUTH2CLIENT_DIRECTORY_NAME)) {
-                Map<String, Serializable> filter = Collections.singletonMap("clientId", clientId);
-                DocumentModelList docs = session.query(filter);
-                if (docs.size() == 1) {
-                    return docs.get(0);
-                } else if (docs.size() > 1) {
-                    throw new NuxeoException(
-                            String.format("More than one client registered for the '%s' id", clientId));
-                }
+        return execute((session) -> {
+            Map<String, Serializable> filter = Collections.singletonMap("clientId", clientId);
+            DocumentModelList docs = session.query(filter);
+            if (docs.size() == 1) {
+                return docs.get(0);
+            } else if (docs.size() > 1) {
+                throw new NuxeoException(String.format("More than one client registered for the '%s' id", clientId));
             }
             return null;
         });
     }
 
     protected List<DocumentModel> queryClients() {
-        DirectoryService service = Framework.getService(DirectoryService.class);
-        return Framework.doPrivileged(() -> {
-            try (Session session = service.open(OAUTH2CLIENT_DIRECTORY_NAME)) {
-                return session.query(Collections.emptyMap());
-            } catch (DirectoryException e) {
-                throw new NuxeoException("Error while fetching client directory", e);
-            }
-        });
+        return execute((session) -> session.query(Collections.emptyMap()));
     }
 
     /**
      * @since 11.1
      */
-    protected OAuth2Client execute(Function<Session, OAuth2Client> function) {
+    protected <T> T execute(Function<Session, T> function) {
         DirectoryService service = Framework.getService(DirectoryService.class);
-        try (Session session = service.open(OAUTH2CLIENT_DIRECTORY_NAME)) {
-            return function.apply(session);
-        } catch (DirectoryException e) {
-            throw new NuxeoException("Error while fetching client directory", e);
-        }
+        return Framework.doPrivileged(() -> {
+            try (Session session = service.open(OAUTH2CLIENT_DIRECTORY_NAME)) {
+                return function.apply(session);
+            } catch (DirectoryException e) {
+                throw new NuxeoException("Error while fetching client directory", e);
+            }
+        });
     }
 }

@@ -19,13 +19,9 @@
 
 package org.nuxeo.ecm.platform.oauth2.enums;
 
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.nuxeo.ecm.platform.oauth2.Constants.TOKEN_SERVICE;
 import static org.nuxeo.ecm.platform.oauth2.tokens.NuxeoOAuth2Token.KEY_SERVICE_NAME;
 
-import java.util.Arrays;
-
-import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.query.sql.model.Predicate;
 import org.nuxeo.ecm.core.query.sql.model.Predicates;
 
@@ -40,38 +36,25 @@ import org.nuxeo.ecm.core.query.sql.model.Predicates;
  */
 public enum NuxeoOAuth2TokenType {
 
-    AS_PROVIDER("asProvider") {
-        @Override
-        public Predicate getPredicate() {
-            return Predicates.eq(KEY_SERVICE_NAME, TOKEN_SERVICE);
-        }
-    },
+    AS_PROVIDER("asProvider", Predicates.eq(KEY_SERVICE_NAME, TOKEN_SERVICE)),
 
-    AS_CLIENT("asClient") {
-        @Override
-        public Predicate getPredicate() {
-            return Predicates.noteq(KEY_SERVICE_NAME, TOKEN_SERVICE);
-        }
-    };
+    AS_CLIENT("asClient", Predicates.noteq(KEY_SERVICE_NAME, TOKEN_SERVICE));
 
-    NuxeoOAuth2TokenType(String value) {
+    protected final String value;
+
+    protected final Predicate predicate;
+
+    NuxeoOAuth2TokenType(String value, Predicate predicate) {
         this.value = value;
-    }
-
-    public abstract Predicate getPredicate();
-
-    public static NuxeoOAuth2TokenType fromValueType(String value) {
-        return Arrays.stream(values())
-                     .filter(type -> type.getValue().equals(value))
-                     .findAny()
-                     .orElseThrow(() -> new NuxeoException(String.format("Undefined oAuth2 type for value '%s'", value),
-                             SC_NOT_FOUND));
-
+        this.predicate = predicate;
     }
 
     public String getValue() {
         return value;
     }
 
-    protected final String value;
+    public Predicate getPredicate() {
+        return predicate;
+    }
+
 }

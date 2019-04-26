@@ -38,6 +38,26 @@ public class OAuth2ClientWriter extends ExtensibleEntityJsonWriter<OAuth2Client>
 
     public static final String ENTITY_TYPE = "oauth2Client";
 
+    /**
+     * @since 11.1
+     */
+    public static final String ID_FIELD = "id";
+
+    /**
+     * @since 11.1
+     */
+    public static final String SECRET_FIELD = "secret";
+
+    /**
+     * @since 11.1
+     */
+    public static final String ENABLED_FIELD = "isEnabled";
+
+    /**
+     * @since 11.1
+     */
+    public static final String AUTO_GRANT_FIELD = "isAutoGrant";
+
     public OAuth2ClientWriter() {
         super(ENTITY_TYPE, OAuth2Client.class);
     }
@@ -50,9 +70,9 @@ public class OAuth2ClientWriter extends ExtensibleEntityJsonWriter<OAuth2Client>
             jg.writeString(url);
         }
         jg.writeEndArray();
-        jg.writeStringField("secret", client.getSecret());
-        jg.writeStringField("id", client.getId());
-        jg.writeBooleanField("isAutoGrant", client.isAutoGrant());
-        jg.writeBooleanField("isEnabled", client.isEnabled());
+        jg.writeStringField(SECRET_FIELD, client.getSecret());
+        jg.writeStringField(ID_FIELD, client.getId());
+        jg.writeBooleanField(AUTO_GRANT_FIELD, client.isAutoGrant());
+        jg.writeBooleanField(ENABLED_FIELD, client.isEnabled());
     }
 }

@@ -19,11 +19,15 @@
 
 package org.nuxeo.ecm.platform.oauth2.clients;
 
-import static java.util.Objects.requireNonNullElse;
+import static java.util.Objects.requireNonNullElseGet;
 import static org.nuxeo.ecm.core.io.registry.reflect.Instantiations.SINGLETON;
 import static org.nuxeo.ecm.core.io.registry.reflect.Priorities.REFERENCE;
 import static org.nuxeo.ecm.platform.oauth2.clients.OAuth2Client.NAME_FIELD;
 import static org.nuxeo.ecm.platform.oauth2.clients.OAuth2Client.REDIRECT_URI_FIELD;
+import static org.nuxeo.ecm.platform.oauth2.clients.OAuth2ClientWriter.AUTO_GRANT_FIELD;
+import static org.nuxeo.ecm.platform.oauth2.clients.OAuth2ClientWriter.ENABLED_FIELD;
+import static org.nuxeo.ecm.platform.oauth2.clients.OAuth2ClientWriter.ID_FIELD;
+import static org.nuxeo.ecm.platform.oauth2.clients.OAuth2ClientWriter.SECRET_FIELD;
 
 import java.util.Collections;
 import java.util.List;
@@ -47,12 +51,13 @@ public class OAuth2ClientReader extends EntityJsonReader<OAuth2Client> {
     @Override
     protected OAuth2Client readEntity(JsonNode jn) {
         String name = getStringField(jn, NAME_FIELD);
-        List<String> redirectURIs = requireNonNullElse(getStringListField(jn, REDIRECT_URI_FIELD),
-                Collections.emptyList());
-        String clientId = getStringField(jn, "id");
-        String secret = getStringField(jn, "secret");
-        boolean autoGrant = BooleanUtils.toBoolean(getBooleanField(jn, "isAutoGrant"));
-        boolean enabled = BooleanUtils.toBoolean(getBooleanField(jn, "isEnabled"));
+        List<String> redirectURIs = requireNonNullElseGet(getStringListField(jn, REDIRECT_URI_FIELD),
+                Collections::emptyList);
+        String clientId = getStringField(jn, ID_FIELD);
+        String secret = getStringField(jn, SECRET_FIELD);
+        boolean autoGrant = BooleanUtils.toBoolean(getBooleanField(jn, AUTO_GRANT_FIELD));
+        boolean enabled = BooleanUtils.toBoolean(getBooleanField(jn, ENABLED_FIELD));
+
         return new OAuth2Client(name, clientId, secret, redirectURIs, autoGrant, enabled);
     }
 }

@@ -23,11 +23,9 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static org.nuxeo.ecm.platform.oauth2.clients.OAuth2ClientService.OAUTH2CLIENT_SCHEMA;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -143,19 +141,13 @@ public class OAuth2Client {
     }
 
     public static OAuth2Client fromDocumentModel(DocumentModel doc) {
-        String name = (String) doc.getPropertyValue(OAUTH2CLIENT_SCHEMA + ":name");
-        String id = (String) doc.getPropertyValue(OAUTH2CLIENT_SCHEMA + ":clientId");
-        String secret = (String) doc.getPropertyValue(OAUTH2CLIENT_SCHEMA + ":clientSecret");
-        List<String> redirectURIs;
-        String redirectURIsProperty = (String) doc.getPropertyValue(OAUTH2CLIENT_SCHEMA + ":redirectURIs");
-        if (StringUtils.isEmpty(redirectURIsProperty)) {
-            redirectURIs = Collections.emptyList();
-        } else {
-            redirectURIs = Arrays.asList(redirectURIsProperty.split(","));
-        }
-        boolean autoGrant = (Boolean) Optional.ofNullable(doc.getPropertyValue(OAUTH2CLIENT_SCHEMA + ":autoGrant"))
-                                              .orElse(false);
-        boolean enabled = (Boolean) doc.getPropertyValue(OAUTH2CLIENT_SCHEMA + ":enabled");
+        String name = (String) doc.getProperty(OAUTH2CLIENT_SCHEMA, NAME_FIELD);
+        String id = (String) doc.getProperty(OAUTH2CLIENT_SCHEMA, ID_FIELD);
+        boolean autoGrant = (Boolean) doc.getProperty(OAUTH2CLIENT_SCHEMA, AUTO_GRANT_FIELD);
+        boolean enabled = (Boolean) doc.getProperty(OAUTH2CLIENT_SCHEMA, ENABLED_FIELD);
+        String secret = (String) doc.getProperty(OAUTH2CLIENT_SCHEMA, SECRET_FIELD);
+        String redirectURIsProperty = (String) doc.getProperty(OAUTH2CLIENT_SCHEMA, REDIRECT_URI_FIELD);
+        List<String> redirectURIs = Arrays.asList(StringUtils.split(redirectURIsProperty, REDIRECT_URI_SEPARATOR));
 
         return new OAuth2Client(name, id, secret, redirectURIs, autoGrant, enabled);
     }
@@ -250,14 +242,14 @@ public class OAuth2Client {
      */
     public static void validate(OAuth2Client oAuth2Client) {
         requireNonNull(oAuth2Client, "oAuth2Client is required");
-        String message = null;
+        String message;
         if (StringUtils.isEmpty(oAuth2Client.getName())) {
             message = "Client name is required";
         } else if (StringUtils.isEmpty(oAuth2Client.getId())) {
             message = "Client Id is required";
         } else if (oAuth2Client.getRedirectURIs().isEmpty()) {
             message = "Redirect URIs is required";
-        } else if (!oAuth2Client.getRedirectURIs().isEmpty()) {
+        } else {
             message = oAuth2Client.getRedirectURIs()
                                   .stream()
                                   .filter(uri -> !isRedirectURIValid(uri))

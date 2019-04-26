@@ -129,13 +129,13 @@ public class OAuth2ObjectTest extends BaseTest {
      * @since 11.1
      */
     protected static final String TOKEN_PATH_NUXEO_AS_PROVIDER = String.format("oauth2/token/%s",
-            NuxeoOAuth2TokenType.AS_PROVIDER.getValue());
+            NuxeoOAuth2TokenType.AS_PROVIDER);
 
     /**
      * @since 11.1
      */
     protected static final String TOKEN_PATH_NUXEO_AS_CLIENT = String.format("oauth2/token/%s",
-            NuxeoOAuth2TokenType.AS_CLIENT.getValue());
+            NuxeoOAuth2TokenType.AS_CLIENT);
 
     /**
      * @since 11.1
@@ -695,10 +695,8 @@ public class OAuth2ObjectTest extends BaseTest {
      */
     @Test
     public void shouldFailWhenRetrieveTokensWithoutValidType() {
-        JsonNode expectedBody = createResponseError(String.format("Undefined oAuth2 type for value 'anyType'"),
-                Response.Status.NOT_FOUND);
         makeOperationAndVerify(TEST_OAUTH2_USER, "oauth2/token/anyType", RequestType.GET, Response.Status.NOT_FOUND,
-                expectedBody);
+                null);
     }
 
     // test oauth2/token/provider
