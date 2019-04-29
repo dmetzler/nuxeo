@@ -67,6 +67,7 @@ public class TestImportOperation {
     private static final int TIMEOUT_SECONDS = 20;
 
     private static final String DOCS_OK_CSV = "docs_ok_big.csv";
+    private static final String DOCS_SURROUNDING_SPACES_CSV = "docs_surrounding_spaces.csv";
 
     @Inject
     private CoreSession session;
@@ -141,5 +142,54 @@ public class TestImportOperation {
         assertEquals(0, result.getSkippedLineCount());
         assertEquals(336, result.getSuccessLineCount());
         assertEquals(336, result.getTotalLineCount());
+    }
+    
+    @Test
+    public void TestImportIgnoreSurroundingSpaces() throws OperationException, InterruptedException {
+    	Map<String, Object> params = new HashMap<>();
+        params.put("path", testFolder.getPathAsString());
+
+        chain = new OperationChain("test-chain");
+        chain.add(CSVImportOperation.ID).from(params);
+
+        OperationContext ctx = new OperationContext(session);
+        File csv = FileUtils.getResourceFileFromContext(DOCS_SURROUNDING_SPACES_CSV);
+        Blob blob = new FileBlob(csv);
+        ctx.setInput(blob);
+
+        String importId = (String) service.run(ctx, chain);
+
+        assertNotNull(importId);
+
+        boolean completed = false;
+        do {
+            chain = new OperationChain("test-chain");
+            chain.add(CSVImportStatusOperation.ID);
+
+            ctx = new OperationContext(session);
+            ctx.setInput(importId);
+
+            CSVImportStatus status = (CSVImportStatus) service.run(ctx, chain);
+
+            assertNotNull(status);
+            completed = status.isComplete();
+            if (!completed) {
+                Thread.sleep(100);
+            }
+        } while (!completed);
+
+        chain = new OperationChain("test-chain");
+        chain.add(CSVImportResultOperation.ID);
+
+        ctx = new OperationContext(session);
+        ctx.setInput(importId);
+
+        CSVImportResult result = (CSVImportResult) service.run(ctx, chain);
+
+        assertNotNull(result);
+        assertEquals(0, result.getErrorLineCount());
+        assertEquals(0, result.getSkippedLineCount());
+        assertEquals(4, result.getSuccessLineCount());
+        assertEquals(4, result.getTotalLineCount());
     }
 }
