@@ -1198,7 +1198,7 @@ public class OAuth2ObjectTest extends BaseTest {
                 "}";
 
         for (String uri : invalidURIs) {
-            JsonNode responseError = createResponseError(String.format("'%s' is not a valid URI", uri),
+            JsonNode responseError = createResponseError(String.format("'%s' is not a valid redirect URI", uri),
                     Response.Status.BAD_REQUEST);
             makeOperationAndVerify(TEST_OAUTH2_USER, CLIENT_PATH, RequestType.POST, String.format(data, uri),
                     Response.Status.BAD_REQUEST, responseError);
@@ -1222,7 +1222,7 @@ public class OAuth2ObjectTest extends BaseTest {
                 "   ]\n" + //
                 "}";
 
-        JsonNode responseError = createResponseError(String.format("Client with id '%s' already exist", TEST_CLIENT),
+        JsonNode responseError = createResponseError(String.format("Client with id '%s' already exists", TEST_CLIENT),
                 Response.Status.BAD_REQUEST);
         makeOperationAndVerify(TEST_OAUTH2_USER, CLIENT_PATH, RequestType.POST, String.format(data, TEST_CLIENT),
                 Response.Status.BAD_REQUEST, responseError);
@@ -1290,7 +1290,6 @@ public class OAuth2ObjectTest extends BaseTest {
         String data = "{\n" + //
                 " \"entity-type\": \"oauth2Client\",\n" + //
                 "   \"id\": \"nuxeo-client-11\",\n" + //
-                "   \"secret\": \"4321\",\n" + //
                 "   \"name\": \"Nuxeo Client 11\",\n" + //
                 "   \"redirectURIs\": [\n" + //
                 "       \"nuxeo://authorize\",\"nuxeo://authorize2\", \"nuxeo://authorize3\"\n" + //
@@ -1302,7 +1301,7 @@ public class OAuth2ObjectTest extends BaseTest {
                 "   \"id\": \"nuxeo-client-11\",\n" + //
                 "   \"name\": \"Nuxeo Client 11\",\n" + //
                 "   \"isEnabled\": false,\n" + //
-                "   \"secret\": \"4321\",\n" + //
+                "   \"secret\": null,\n" + //
                 "   \"isAutoGrant\": false,\n" + //
                 "   \"redirectURIs\": [\n" + //
                 "       \"nuxeo://authorize2\", \"nuxeo://authorize\",\"nuxeo://authorize3\"\n" + //
@@ -1320,18 +1319,54 @@ public class OAuth2ObjectTest extends BaseTest {
     public void iCanUpdateClientWithRequiredFieldsOnly() throws IOException {
         String data = "{\n" + //
                 " \"entity-type\": \"oauth2Client\",\n" + //
-                "   \"id\": \"nuxeo-client-12\",\n" + //
-                "   \"name\": \"Nuxeo Client 12\",\n" + //
-                "   \"isEnabled\": false,\n" + //
-                "   \"secret\": \"8529\",\n" + //
-                "   \"isAutoGrant\": false,\n" + //
+                "   \"id\": \"%s\",\n" + //
+                "   \"name\": \"%s\",\n" + //
                 "   \"redirectURIs\": [\n" + //
                 "       \"nuxeo://authorize\"\n" + //
                 "   ]\n" + //
                 "}";
 
-        makeOperationAndVerify(TEST_OAUTH2_USER, CLIENT_PATH, RequestType.POST, data, Response.Status.CREATED,
-                mapper.readTree(data));
+        String expected = "{\n" + //
+                " \"entity-type\": \"oauth2Client\",\n" + //
+                "   \"id\": \"%s\",\n" + //
+                "   \"name\": \"%s\",\n" + //
+                "   \"isEnabled\": false,\n" + //
+                "   \"isAutoGrant\": false,\n" + //
+                "   \"redirectURIs\": [\n" + //
+                "       \"nuxeo://authorize\"\n" + //
+                "   ],\n" + //
+                "   \"secret\": null\n" + //
+                "}";
+
+        data = String.format(data, TEST_CLIENT_NAME, TEST_CLIENT);
+        expected = String.format(expected, TEST_CLIENT_NAME, TEST_CLIENT);
+        makeOperationAndVerify(TEST_OAUTH2_USER, getClientPath(TEST_CLIENT), RequestType.PUT, data, Response.Status.OK,
+                mapper.readTree(expected));
+    }
+
+    /**
+     * @since 11.1
+     */
+    @Test
+    public void iCannotUpdateClientWithExistingClientId() throws IOException {
+        String data = "{\n" + //
+                "   \"entity-type\": \"oauth2Client\",\n" + //
+                "   \"id\": \"%s\",\n" + //
+                "   \"name\": \"%s\",\n" + //
+                "   \"isEnabled\": false,\n" + //
+                "   \"secret\": \"4321\",\n" + //
+                "   \"isAutoGrant\": false,\n" + //
+                "   \"redirectURIs\": [\n" + //
+                "      \"nuxeo://authorization\"\n" + //
+                "   ]\n" + //
+                "}";
+        data = String.format(data, TEST_CLIENT_2, TEST_CLIENT_NAME_2);
+
+        JsonNode responseError = createResponseError(String.format("Client with id '%s' already exists", TEST_CLIENT_2),
+                Response.Status.BAD_REQUEST);
+        makeOperationAndVerify(TEST_OAUTH2_USER, getClientPath(TEST_CLIENT), RequestType.PUT, data,
+                Response.Status.BAD_REQUEST, responseError);
+
     }
 
     /**
@@ -1371,7 +1406,7 @@ public class OAuth2ObjectTest extends BaseTest {
      *             {@link #makeOperationAndVerify(String, String, RequestType, String, MultivaluedMap, Response.Status, JsonNode)}
      *             instead.
      */
-    @Deprecated
+    @Deprecated(since = "11.1", forRemoval = true)
     protected void verifyClient(JsonNode node, String clientId, String name) {
         if (node.isArray()) {
             JsonNode child;
@@ -1391,7 +1426,7 @@ public class OAuth2ObjectTest extends BaseTest {
     }
 
     /**
-     * Make CRUD operations by unauthorized users. An unauthorized user cannot Create, Update or Delete a client.
+     * Makes CRUD operations by unauthorized users. An unauthorized user cannot Creates, Updates or Deletes a client.
      *
      * @param path the path to the resource
      * @param method the request type {@link RequestType}
@@ -1403,7 +1438,7 @@ public class OAuth2ObjectTest extends BaseTest {
     }
 
     /**
-     * Make the CRUD operation and check the response. An operation is succeeds if it response status worth the
+     * Makes the CRUD operation and check the response. An operation is succeeds if it response status worth the
      * expectedStatus param and it body match the expected {@link JsonNode} if it exists.
      * <p>
      * {@link org.skyscreamer.jsonassert.JSONAssert} is used instead of {@link JsonNode#equals(Object)} to avoid the
@@ -1438,7 +1473,7 @@ public class OAuth2ObjectTest extends BaseTest {
     }
 
     /**
-     * Create {@code JsonNode} that wrap an error response.
+     * Creates {@code JsonNode} that wrap an error response.
      *
      * @param message the message
      * @param status the status
@@ -1455,7 +1490,7 @@ public class OAuth2ObjectTest extends BaseTest {
     }
 
     /**
-     * Make the CRUD operation and check the response.
+     * Makes the CRUD operation and check the response.
      *
      * @since 11.1
      * @see #makeOperationAndVerify(String, String, RequestType, String, MultivaluedMap, Response.Status, JsonNode)
@@ -1466,7 +1501,7 @@ public class OAuth2ObjectTest extends BaseTest {
     }
 
     /**
-     * Make the CRUD operation and check the response.
+     * Makes the CRUD operation and check the response.
      *
      * @since 11.1
      * @see #makeOperationAndVerify(String, String, RequestType, String, MultivaluedMap, Response.Status, JsonNode)
@@ -1477,7 +1512,7 @@ public class OAuth2ObjectTest extends BaseTest {
     }
 
     /**
-     * Make the CRUD operation and check the response.
+     * Makes the CRUD operation and check the response.
      *
      * @since 11.1
      * @see #makeOperationAndVerify(String, String, RequestType, String, MultivaluedMap, Response.Status, JsonNode)

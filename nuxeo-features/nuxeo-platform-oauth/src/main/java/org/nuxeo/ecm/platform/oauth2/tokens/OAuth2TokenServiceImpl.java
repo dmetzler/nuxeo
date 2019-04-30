@@ -45,6 +45,8 @@ import org.nuxeo.runtime.model.DefaultComponent;
  */
 public class OAuth2TokenServiceImpl extends DefaultComponent implements OAuth2TokenService {
 
+    public static final String TOKEN_DIR = "oauth2Tokens";
+
     @Override
     public List<NuxeoOAuth2Token> getTokens() {
         return findTokens(getQueryBuilder(null, null));
@@ -63,6 +65,14 @@ public class OAuth2TokenServiceImpl extends DefaultComponent implements OAuth2To
     }
 
     @Override
+    public List<NuxeoOAuth2Token> getTokens(String nxuser, NuxeoOAuth2TokenType type) {
+        requireNonNull(nxuser, "nxuser cannot be null");
+        requireNonNull(type, "oAuth2TokenType cannot be null");
+
+        return findTokens(getQueryBuilder(nxuser, type));
+    }
+
+    @Override
     public List<NuxeoOAuth2Token> search(String query) {
         return findTokens(getQueryBuilder(query));
     }
@@ -72,7 +82,7 @@ public class OAuth2TokenServiceImpl extends DefaultComponent implements OAuth2To
             DirectoryService ds = Framework.getService(DirectoryService.class);
             try (Session session = ds.open(TOKEN_DIR)) {
                 List<DocumentModel> documents = session.query(queryBuilder, false);
-                return documents.stream().distinct().map(NuxeoOAuth2Token::new).collect(Collectors.toList());
+                return documents.stream().map(NuxeoOAuth2Token::new).collect(Collectors.toList());
             }
         });
     }

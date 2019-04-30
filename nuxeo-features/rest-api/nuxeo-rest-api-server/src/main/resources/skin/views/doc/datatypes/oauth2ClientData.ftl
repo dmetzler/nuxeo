@@ -23,7 +23,7 @@
       "items": {
         "type":"string"
       },
-      "required": false
+      "required": true
     },
     "secret": {
       "uniqueItems": false,

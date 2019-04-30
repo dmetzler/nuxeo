@@ -59,6 +59,7 @@ import org.nuxeo.ecm.platform.oauth2.providers.OAuth2ServiceProvider;
 import org.nuxeo.ecm.platform.oauth2.providers.OAuth2ServiceProviderRegistry;
 import org.nuxeo.ecm.platform.oauth2.tokens.NuxeoOAuth2Token;
 import org.nuxeo.ecm.platform.oauth2.tokens.OAuth2TokenService;
+import org.nuxeo.ecm.platform.oauth2.tokens.OAuth2TokenServiceImpl;
 import org.nuxeo.ecm.platform.oauth2.tokens.OAuth2TokenStore;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.ecm.webengine.model.exceptions.WebResourceNotFoundException;
@@ -79,10 +80,10 @@ import com.google.api.client.auth.oauth2.Credential;
 public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
 
     /**
-     * @deprecated since 11.1. Use {@link OAuth2TokenService#TOKEN_DIR} instead.
+     * @deprecated since 11.1. Use {@link OAuth2TokenServiceImpl#TOKEN_DIR} instead.
      */
-    @Deprecated
-    public static final String TOKEN_DIR = OAuth2TokenService.TOKEN_DIR;
+    @Deprecated(since = "11.1", forRemoval = true)
+    public static final String TOKEN_DIR = OAuth2TokenServiceImpl.TOKEN_DIR;
 
     /**
      * Lists all oauth2 service providers.
@@ -205,15 +206,13 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
      * Retrieves all oAuth2 tokens by {@link NuxeoOAuth2TokenType}.
      *
      * @param type, the value of {@code NuxeoOAuth2TokenType}
-     * @param request the http request
      * @return if <code>type</code> is {@link NuxeoOAuth2TokenType#AS_PROVIDER}, then we retrieve tokens that are
      *         provided by Nuxeo, otherwise those used by Nuxeo to connect to others applications
      * @since 11.1
      */
     @GET
     @Path("token/{type}")
-    public List<NuxeoOAuth2Token> getTokens(@PathParam("type") NuxeoOAuth2TokenType type,
-            @Context HttpServletRequest request) {
+    public List<NuxeoOAuth2Token> getTokens(@PathParam("type") NuxeoOAuth2TokenType type) {
         checkPermission(null);
         return Framework.getService(OAuth2TokenService.class).getTokens(type);
     }
@@ -328,10 +327,8 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
     @Path("token/provider")
     public List<NuxeoOAuth2Token> getProviderUserTokens(@Context HttpServletRequest request) {
         checkNotAnonymousUser();
-        String nxuser = request.getUserPrincipal().getName();
-        return getTokens(nxuser).stream() // filter: make sure no client tokens are retrieved
-                                .filter(token -> token.getClientId() == null)
-                                .collect(Collectors.toList());
+        return Framework.getService(OAuth2TokenService.class)
+                        .getTokens(request.getUserPrincipal().getName(), NuxeoOAuth2TokenType.AS_CLIENT);
     }
 
     /**
@@ -343,10 +340,8 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
     @Path("token/client")
     public List<NuxeoOAuth2Token> getClientUserTokens(@Context HttpServletRequest request) {
         checkNotAnonymousUser();
-        String nxuser = request.getUserPrincipal().getName();
-        return getTokens(nxuser).stream() // filter: make sure no provider tokens are retrieved
-                                .filter(token -> token.getClientId() != null)
-                                .collect(Collectors.toList());
+        return Framework.getService(OAuth2TokenService.class)
+                        .getTokens(request.getUserPrincipal().getName(), NuxeoOAuth2TokenType.AS_PROVIDER);
     }
 
     /**
@@ -419,7 +414,6 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
     /**
      * Create a new oauth2 client.
      *
-     * @param request the http request
      * @param client the oAuth2Client to create
      * @return the {@link Response}
      * @since 11.1
@@ -428,7 +422,7 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
     @Path("client")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createClient(@Context HttpServletRequest request, OAuth2Client client) {
+    public Response createClient(OAuth2Client client) {
         checkPermission(null);
         OAuth2Client oAuth2Client = Framework.getService(OAuth2ClientService.class).create(client);
         return Response.status(Status.CREATED).entity(oAuth2Client).build();
@@ -488,7 +482,7 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
     /**
      * @deprecated since 11.1. Use {@link OAuth2TokenService#getTokens()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "11.1", forRemoval = true)
     protected List<NuxeoOAuth2Token> getTokens() {
         return Framework.getService(OAuth2TokenService.class).getTokens();
     }
@@ -496,7 +490,7 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
     /**
      * @deprecated since 11.1. Use {@link OAuth2TokenService#getTokens(String)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "11.1", forRemoval = true)
     protected List<NuxeoOAuth2Token> getTokens(String nxuser) {
         return Framework.getService(OAuth2TokenService.class).getTokens(nxuser);
     }
@@ -572,7 +566,7 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
         entry.setProperty(SCHEMA, "creationDate", token.getCreationDate());
         Framework.doPrivileged(() -> {
             DirectoryService ds = Framework.getService(DirectoryService.class);
-            try (Session session = ds.open(TOKEN_DIR)) {
+            try (Session session = ds.open(OAuth2TokenServiceImpl.TOKEN_DIR)) {
                 session.updateEntry(entry);
             }
         });
@@ -581,7 +575,7 @@ public class OAuth2Object extends AbstractResource<ResourceTypeImpl> {
     protected void deleteToken(DocumentModel token) {
         Framework.doPrivileged(() -> {
             DirectoryService ds = Framework.getService(DirectoryService.class);
-            try (Session session = ds.open(OAuth2TokenService.TOKEN_DIR)) {
+            try (Session session = ds.open(OAuth2TokenServiceImpl.TOKEN_DIR)) {
                 session.deleteEntry(token);
             }
         });

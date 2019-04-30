@@ -19,6 +19,7 @@
 
 package org.nuxeo.ecm.platform.oauth2.clients;
 
+import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 import static org.nuxeo.ecm.core.io.registry.reflect.Instantiations.SINGLETON;
 import static org.nuxeo.ecm.core.io.registry.reflect.Priorities.REFERENCE;
@@ -32,7 +33,6 @@ import static org.nuxeo.ecm.platform.oauth2.clients.OAuth2ClientWriter.SECRET_FI
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.nuxeo.ecm.core.io.marshallers.json.EntityJsonReader;
 import org.nuxeo.ecm.core.io.registry.reflect.Setup;
 
@@ -55,8 +55,9 @@ public class OAuth2ClientReader extends EntityJsonReader<OAuth2Client> {
                 Collections::emptyList);
         String clientId = getStringField(jn, ID_FIELD);
         String secret = getStringField(jn, SECRET_FIELD);
-        boolean autoGrant = BooleanUtils.toBoolean(getBooleanField(jn, AUTO_GRANT_FIELD));
-        boolean enabled = BooleanUtils.toBoolean(getBooleanField(jn, ENABLED_FIELD));
+
+        boolean autoGrant = requireNonNullElse(getBooleanField(jn, AUTO_GRANT_FIELD), false);
+        boolean enabled = requireNonNullElse(getBooleanField(jn, ENABLED_FIELD), false);
 
         return new OAuth2Client(name, clientId, secret, redirectURIs, autoGrant, enabled);
     }

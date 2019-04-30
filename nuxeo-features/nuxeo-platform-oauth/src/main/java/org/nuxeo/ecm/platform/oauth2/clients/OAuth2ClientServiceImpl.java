@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ecm.platform.oauth2.clients;
 
+import static java.util.Objects.requireNonNull;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
@@ -25,10 +26,10 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -73,13 +74,10 @@ public class OAuth2ClientServiceImpl extends DefaultComponent implements OAuth2C
 
     @Override
     public OAuth2Client create(OAuth2Client oAuth2Client) {
-        Objects.requireNonNull(oAuth2Client, "oAuth2Client is required");
-        if (getClientModel(oAuth2Client.getId()) != null) {
-            throw new NuxeoException(String.format("Client with id '%s' already exist", oAuth2Client.getId()),
-                    SC_BAD_REQUEST);
-        }
+        validate(oAuth2Client);
+        checkUnicity(oAuth2Client.getId());
 
-        return execute((session) -> {
+        return execute(session -> {
             DocumentModel documentModel = OAuth2Client.fromOAuth2Client(oAuth2Client);
             return OAuth2Client.fromDocumentModel(session.createEntry(documentModel));
         });
@@ -87,33 +85,30 @@ public class OAuth2ClientServiceImpl extends DefaultComponent implements OAuth2C
 
     @Override
     public OAuth2Client update(String clientId, OAuth2Client oAuth2Client) {
-        DocumentModel doc = getClientModel(clientId);
-        if (doc == null) {
-            throw new NuxeoException(SC_NOT_FOUND);
+        validate(oAuth2Client);
+        if (!oAuth2Client.getId().equals(clientId)) {
+            checkUnicity(oAuth2Client.getId());
         }
 
-        return execute((session) -> {
-            OAuth2Client.updateDocument(doc, oAuth2Client);
-            session.updateEntry(doc);
-            return OAuth2Client.fromDocumentModel(doc);
+        DocumentModel doc = getDocument(clientId);
+        return execute(session -> {
+            DocumentModel documentModel = OAuth2Client.updateDocument(doc, oAuth2Client);
+            session.updateEntry(documentModel);
+            return OAuth2Client.fromDocumentModel(documentModel);
         });
     }
 
     @Override
     public void delete(String clientId) {
-        DocumentModel doc = getClientModel(clientId);
-        if (doc == null) {
-            throw new NuxeoException(SC_NOT_FOUND);
-        }
-
-        execute((session) -> {
-            session.deleteEntry(doc);
+        DocumentModel document = getDocument(clientId);
+        execute(session -> {
+            session.deleteEntry(document);
             return null;
         });
     }
 
     protected DocumentModel getClientModel(String clientId) {
-        return execute((session) -> {
+        return execute(session -> {
             Map<String, Serializable> filter = Collections.singletonMap("clientId", clientId);
             DocumentModelList docs = session.query(filter);
             if (docs.size() == 1) {
@@ -126,7 +121,7 @@ public class OAuth2ClientServiceImpl extends DefaultComponent implements OAuth2C
     }
 
     protected List<DocumentModel> queryClients() {
-        return execute((session) -> session.query(Collections.emptyMap()));
+        return execute(session -> session.query(Collections.emptyMap()));
     }
 
     /**
@@ -142,4 +137,72 @@ public class OAuth2ClientServiceImpl extends DefaultComponent implements OAuth2C
             }
         });
     }
+
+    /**
+     * Validates the {@link OAuth2Client}. An {@link OAuth2Client} is valid if and only if
+     * <ul>
+     * <li>It is not {@code null}</li>
+     * <li>The required fields are filled in:
+     * {@link OAuth2Client#getId()},{@link OAuth2Client#getName()},{@link OAuth2Client#getRedirectURIs()}</li>
+     * <li>The {@link OAuth2Client#getRedirectURIs()} is a valid URI,
+     * {@link OAuth2Client#isRedirectURIValid(String)}</li>
+     * </ul>
+     *
+     * @param oAuth2Client the {@code not null} oAuth2Client to validate
+     * @throws NullPointerException if the oAuth2Client is {@code null}
+     * @throws NuxeoException if oAuth2Client is not valid
+     * @since 11.1
+     */
+    protected void validate(OAuth2Client oAuth2Client) {
+        requireNonNull(oAuth2Client, "oAuth2Client is required");
+        String message;
+        if (StringUtils.isBlank(oAuth2Client.getName())) {
+            message = "Client name is required";
+        } else if (StringUtils.isBlank(oAuth2Client.getId())) {
+            message = "Client Id is required";
+        } else if (oAuth2Client.getRedirectURIs().isEmpty()) {
+            message = "Redirect URIs is required";
+        } else {
+            message = oAuth2Client.getRedirectURIs()
+                                  .stream()
+                                  .filter(uri -> !OAuth2Client.isRedirectURIValid(uri))
+                                  .findAny()
+                                  .map(uri -> String.format("'%s' is not a valid redirect URI", uri))
+                                  .orElse(null);
+        }
+
+        if (StringUtils.isNotEmpty(message)) {
+            throw new NuxeoException(String.format("%s", message), SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Checks if a client with the {@code clientId} is unique.
+     *
+     * @param clientId the client id to check
+     * @throws NuxeoException if an oAuth2 client with the given {@code clientId} already exists
+     * @since 11.1
+     */
+    protected void checkUnicity(String clientId) {
+        if (getClientModel(clientId) != null) {
+            throw new NuxeoException(String.format("Client with id '%s' already exists", clientId), SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Gets the document model from a given {@code clientId}
+     *
+     * @param clientId the oAuth client id
+     * @throws NuxeoException if there is no document model for the given {@code clientId}
+     * @since 11.1
+     */
+    protected DocumentModel getDocument(String clientId) {
+        DocumentModel doc = getClientModel(clientId);
+        if (doc == null) {
+            throw new NuxeoException(SC_NOT_FOUND);
+        }
+
+        return doc;
+    }
+
 }

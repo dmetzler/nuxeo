@@ -218,7 +218,7 @@
 
   {
     "path": "/oauth2/client/{oauth2ClientId}",
-    "description": "Updates, deletes and retrieves a OAuth2 client.",
+    "description": "Updates, deletes and retrieves an OAuth2 client.",
     "operations" : [
       {
         "method":"GET",

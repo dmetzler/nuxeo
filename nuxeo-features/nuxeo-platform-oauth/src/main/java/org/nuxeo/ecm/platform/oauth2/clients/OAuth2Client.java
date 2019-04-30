@@ -19,7 +19,6 @@
 package org.nuxeo.ecm.platform.oauth2.clients;
 
 import static java.util.Objects.requireNonNull;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static org.nuxeo.ecm.platform.oauth2.clients.OAuth2ClientService.OAUTH2CLIENT_SCHEMA;
 
 import java.util.Arrays;
@@ -30,7 +29,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.directory.BaseSession;
 
 /**
@@ -176,45 +174,39 @@ public class OAuth2Client {
     }
 
     /**
-     * Create {@link DocumentModel} from {@link OAuth2Client}.
+     * Creates a {@link DocumentModel} from an {@link OAuth2Client}.
      *
-     * @param oAuth2Client the oAuth2Client to convert
-     * @return the corresponding {@code DocumentModel} of {@code OAuth2Client}
-     * @throws NullPointerException if oAuth2Client is {@code null}
-     * @throws NuxeoException if oAuth2Client is not valid
+     * @param oAuth2Client the {@code OAuth2Client} to convert
+     * @return the {@code DocumentModel} corresponding to the {@code OAuth2Client}
      * @since 11.1
      */
     public static DocumentModel fromOAuth2Client(OAuth2Client oAuth2Client) {
-        return BaseSession.createEntryModel(null, OAUTH2CLIENT_SCHEMA, null, getDocumentData(oAuth2Client));
+        return BaseSession.createEntryModel(null, OAUTH2CLIENT_SCHEMA, null, toMap(oAuth2Client));
     }
 
     /**
-     * Update {@link DocumentModel} by {@link OAuth2Client}.
+     * Updates the {@link DocumentModel} by the {@link OAuth2Client}.
      *
      * @param documentModel the document model to update
      * @param oAuth2Client the new values of document
      * @return the updated {@code DocumentModel}
      * @throws NullPointerException if the documentModel or oAuth2Client is {@code null}
-     * @throws NuxeoException if oAuth2Client is not valid
      * @since 11.1
      */
     public static DocumentModel updateDocument(DocumentModel documentModel, OAuth2Client oAuth2Client) {
         requireNonNull(documentModel, "documentModel model is required");
-        documentModel.setProperties(OAUTH2CLIENT_SCHEMA, OAuth2Client.getDocumentData(oAuth2Client));
+        documentModel.setProperties(OAUTH2CLIENT_SCHEMA, OAuth2Client.toMap(oAuth2Client));
         return documentModel;
     }
 
     /**
-     * Get document properties from {@link OAuth2Client}.
+     * Converts an {@link OAuth2Client} to map structure.
      *
-     * @param oAuth2Client the oAuth2Client
-     * @return the {@code Map} structure of {@code OAuth2Client}
-     * @throws NullPointerException if the oAuth2Client is {@code null}
-     * @throws NuxeoException if oAuth2Client is not valid
+     * @param oAuth2Client the {@code OAuth2Client}
+     * @return a map representing the {@code OAuth2Client}
      * @since 11.1
      */
-    public static Map<String, Object> getDocumentData(OAuth2Client oAuth2Client) {
-        validate(oAuth2Client);
+    public static Map<String, Object> toMap(OAuth2Client oAuth2Client) {
         Map<String, Object> values = new HashMap<>();
         values.put(NAME_FIELD, oAuth2Client.getName());
         values.put(ID_FIELD, oAuth2Client.getId());
@@ -225,42 +217,6 @@ public class OAuth2Client {
             values.put(SECRET_FIELD, oAuth2Client.getSecret());
         }
         return values;
-    }
-
-    /**
-     * Validate the {@link OAuth2Client}. An {@code OAuth2Client} is valid if and only if
-     * <ul>
-     * <li>It is not {@code null}</li>
-     * <li>The required fields are fill in: {@link #getId()},{@link #getName()},{@link #getRedirectURIs()}</li>
-     * <li>The {@link #getRedirectURIs()} is a valid URI, {@link #isRedirectURIValid(String)}</li>
-     * </ul>
-     *
-     * @param oAuth2Client the not null oAuth2Client to validate
-     * @throws NullPointerException if the oAuth2Client is {@code null}
-     * @throws NuxeoException if oAuth2Client is not valid
-     * @since 11.1
-     */
-    public static void validate(OAuth2Client oAuth2Client) {
-        requireNonNull(oAuth2Client, "oAuth2Client is required");
-        String message;
-        if (StringUtils.isEmpty(oAuth2Client.getName())) {
-            message = "Client name is required";
-        } else if (StringUtils.isEmpty(oAuth2Client.getId())) {
-            message = "Client Id is required";
-        } else if (oAuth2Client.getRedirectURIs().isEmpty()) {
-            message = "Redirect URIs is required";
-        } else {
-            message = oAuth2Client.getRedirectURIs()
-                                  .stream()
-                                  .filter(uri -> !isRedirectURIValid(uri))
-                                  .findAny()
-                                  .map(uri -> String.format("'%s' is not a valid URI", uri))
-                                  .orElse(null);
-        }
-
-        if (StringUtils.isNotEmpty(message)) {
-            throw new NuxeoException(String.format("%s", message), SC_BAD_REQUEST);
-        }
     }
 
     /**
