@@ -1,0 +1,28 @@
+language: java
+jdk:
+  - openjdk11
+env:
+  - _JAVA_OPTIONS="-Djava.awt.headless=true"
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get -q -y install imagemagick ffmpeg2theora ufraw poppler-utils libreoffice libwpd-tools xorg xvfb
+  - sudo add-apt-repository -y ppa:mc3man/trusty-media
+  - sudo apt-get -qq update
+  - sudo apt-get -q -y install ffmpeg
+services:
+  - mongodb
+  - redis
+  - docker
+  - xvfb
+script:
+  - xvfb-run -a mvn test -B -fae
+install:
+  - npm install -g gulp
+  - npm install --save-dev gulp
+  - npm install --global gulp-cli bower
+
+sudo: false
+cache:
+  directories:
+  - $HOME/.m2
+  - node_modules
